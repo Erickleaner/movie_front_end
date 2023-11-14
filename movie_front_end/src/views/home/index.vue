@@ -3,39 +3,48 @@
     <movie-header></movie-header>
     <el-row type="flex" justify="center" align="middle" class="movie-content">
       <el-col :span="18">
-        <div class="tag-row" v-for="item in groups">
-          <template v-if="item.isCheckBox">
-            <p>{{item.label}}：</p>
-            <el-checkbox-group v-model="item.value" size="medium">
-              <el-checkbox-button v-for="city in item.options" :label="city" :key="city">{{city}}</el-checkbox-button>
+        <!--各种选项-->
+        <div class="tag-row" v-for="group in groups">
+          <template v-if="group.isCheckBox">
+            <p>{{group.label}}：</p>
+            <el-checkbox-group @change="search" v-model="group.value" size="medium">
+              <el-checkbox-button v-for="option in group.options" :label="option" :key="option.id">{{option.name}}</el-checkbox-button>
             </el-checkbox-group>
           </template>
           <template v-else>
-            <p>{{item.label}}：</p>
-            <el-radio-group v-model="item.value">
-              <el-radio-button v-for="option in item.options" :label="option"></el-radio-button>
+            <p>{{group.label}}：</p>
+            <el-radio-group @change="search" v-model="group.value">
+              <el-radio-button v-for="option in group.options" :label="option" :key="option.id">{{option.name}}</el-radio-button>
             </el-radio-group>
           </template>
         </div>
 
-        <el-row :gutter="30" class="movie-row" :class="movieRowOrder(q,3)" v-for="q in 3">
-          <el-col v-for="p in 3" :span="8">
+        <el-row :gutter="30" class="movie-row" :class="movieRowOrder(cur,pageSize)" v-for="cur in pageSize">
+          <!--cur-->
+          <el-col v-for="order in rowSize(cur,pageSize)" :span="8">
             <div @click="handleDetail" class="movie-item">
-              <el-image class="image-size" :src="imagePath"></el-image>
-              <div class="detail">
-                <a @click.prevent class="title">功夫</a>
-                <a @click.prevent class="texts">{{ text }}</a>
-                <div class="rate-row">
-                  <el-rate v-model="score"></el-rate>
-                  <p>7.6</p>
+              <el-image class="image-item"
+                   :alt="current(order,cur)['titleCN']"
+                   :src="`http://localhost:8080/image/${current(order,cur)['movieId']}`"/>
+              <div class="detail-item">
+                <a @click.prevent class="title">{{ current(order, cur)['titleCN'] }}</a>
+                <a @click.prevent class="texts">导演：{{ current(order,cur)['director'] }}</a>
+                <a @click.prevent class="texts">主演：{{ current(order,cur)['actor'] }}</a>
+                <a @click.prevent class="texts">{{detail(order,cur)}}</a>
+                <div class="texts-row">
+                  <a @click.prevent>评分：</a>
+                  <a @click.prevent class="rating-score">{{ current(order,cur)['rating'] }}</a>
+                  <a @click.prevent class="rating-count">{{ current(order,cur)['judgeNum'] }}人评价</a>
                 </div>
+
+                <a @click.prevent class="texts">评语：{{ current(order,cur)['inq'] }}</a>
               </div>
             </div>
           </el-col>
         </el-row>
 
 
-        <pagination class="clear-left" v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
+        <pagination class="clear-left" v-show="total>0" :pageSizes="[9,12]" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
 
       </el-col>
     </el-row>
@@ -43,68 +52,122 @@
 </template>
 
 <script>
-import { fetchList } from '@/api/article'
+import {fetchCheckGroups, fetchList} from '@/api/movie'
 import Pagination from '@/components/Pagination'
 import MovieHeader from '@/views/components/MovieHeader'
 
-const typeOptions = ['全部', '喜剧', '爱情', '动作' , '科幻' , '动画', '悬疑', '犯罪', '惊悚' , '冒险'];
-const areaOptions = ['全部', '华语', '欧美', '韩国' , '日本' , '大陆', '美国', '香港', '台湾' , '英国' , '法国'];
-const yearsOptions = ['全部' , '2023', '2022', '2021', '2020' , '2019' , '2010']
-const tagOptions = ['经典', '暴力', '黑白', '无厘头' , '魔幻' , '冒险', '惊悚', '犯罪', '儿童' ]
-const sortOptions = ['综合排序', '近期热度', '首映时间', '高分优先'];
+//use obj not str
+const yearsOptions = [{id:0,name:'全部'},{id:1,name:'2023'},{id:2,name:'2022'},
+  {id:3,name:'2021'},{id:4,name:'2020'},{id:5,name:'2019'},{id:6,name:'2018以前'}]
+//use obj not str
+const sortOptions = [{id:0,name:'综合排序'},{id:1,name:'近期热度'},
+  {id:2,name:'首映时间'},{id:3,name:'高分优先'}]
+const checkGroupsTemp = [
+  {
+    label:'年代',
+    value: yearsOptions[0],
+    options: yearsOptions,
+    isCheckBox:false
+  },
+  {
+    label:'排序',
+    value: sortOptions[0],
+    options: sortOptions,
+    isCheckBox:false
+  },
+]
 export default {
   name: 'Home',
   components: { MovieHeader, Pagination },
   data() {
     return{
       imagePath: require('@/assets/image/gongfu.jpg'),
-      groups:[
-        {
-          label:'类型',
-          value: '全部',
-          options: typeOptions,
-          isCheckBox:false
-        },
-        {
-          label:'地区',
-          value: '全部',
-          options: areaOptions,
-          isCheckBox:false
-        },
-        {
-          label:'年代',
-          value: '全部',
-          options: yearsOptions,
-          isCheckBox:false
-        },
-        {
-          label:'标签',
-          value: ['经典'],
-          options: tagOptions,
-          isCheckBox:true
-        },
-        {
-          label:'排序',
-          value: '综合排序',
-          options: sortOptions,
-          isCheckBox:false
-        },
-      ],
+      groups:[],
       listQuery: {
-        page: 1,
-        limit: 20,
-        importance: undefined,
-        title: undefined,
-        type: undefined,
-        sort: '+id'
+        page:1,
+        limit:9,
+        countryId:0,
+        typeId:0,
+        yearId:0,
+        sortId:0
       },
-      list: null,
-      total: 10,
+      list: [],
+      total: 0,
       text:'2004 / 中国大陆 中国香港 / 喜剧 动作 犯罪 奇幻 / 周星驰 / 周星驰 元秋',
       score:3
     }
   },
+  computed:{
+    pageSize(){
+      const len = this.list.length
+      return Math.ceil(len/3);
+    }
+  },
+  created() {
+    const _this = this
+    fetchCheckGroups().then(res=>{
+      let checkGroups = checkGroupsTemp
+      const {data} = res
+      let {countries,types} = data
+      countries = countries.slice(0,11)
+      types = types.slice(0,12)
+      checkGroups.splice(0, 0,
+        {
+          label:'类型',
+          value: types[0],
+          options: types,
+          isCheckBox:false
+        }
+      );
+      checkGroups.splice(1, 0,
+        {
+          label:'地区',
+          value: countries[0],
+          options: countries,
+          isCheckBox:false
+        }
+      );
+      _this.groups = checkGroups
+    }).then(()=>{
+      this.getList()
+    })
+  },
   methods:{
+    search(){
+      const typeId = this.groups[0].value.id
+      const countryId = this.groups[1].value.id
+      const yearId = this.groups[2].value.id
+      const sortId = this.groups[3].value.id
+      this.listQuery.typeId = typeId
+      this.listQuery.countryId = countryId
+      this.listQuery.yearId = yearId
+      this.listQuery.sortId = sortId
+      this.getList()
+    },
+    detail(order,cur){
+      const movie = this.current(order,cur)
+      const {releaseTime,countries,types} = movie
+      const countryStr = countries.reduce((accumulator,current)=>{
+        accumulator += current.name + " "
+        return accumulator
+      },"")
+      const typeStr = types.reduce((accumulator,current)=>{
+        accumulator += current.name + " "
+        return accumulator
+      },"")
+      return `${releaseTime} / ${countryStr}/ ${typeStr}`
+    },
+    current(order,cur){
+      return this.list[(cur-1)*3+order-1]
+    },
+    rowSize(cur,pageSize){
+      //3 or less
+      if (cur<pageSize){
+        return 3
+      }else {
+        return this.list.length - (pageSize-1)*3
+      }
+    },
     handleDetail(){
       this.$router.push({
         path:'/detail',
@@ -163,20 +226,26 @@ export default {
   padding-left: 0;
 }
 //此处的size不符合一般size
-.image-size{
-  width: 120px;
-  height: 120px;
-}
 .movie-item{
   cursor: pointer;
   display: flex;
-  .detail{
-    .rate-row{
-      padding: 0;
-      display: flex;
-      align-items: center;
-      p{
-        font-size: 14px;
+  .image-item{
+    width: 25%;
+    height: 110px;
+  }
+  .detail-item{
+    width: 75%;
+    div{
+      &.texts-row{
+        font-size: 13px;
+        display: inline-block;
+        padding-bottom: 5px;
+        .rating-score{
+          color:#FFAC2D;
+        }
+        .rating-count{
+          margin-left: 13px;
+        }
       }
     }
     a{
@@ -185,14 +254,15 @@ export default {
         font-size: 15px;
       }
       &.texts{
-        line-height: 20px;
         font-size: 13px;
+        padding-bottom: 5px;
+        display: block;
       }
     }
-    //width: 220px;
     padding-left: 10px;
     display: flex;
     flex-direction: column;
+    justify-content: flex-start;
   }
 }
 </style>
