@@ -1,0 +1,44 @@
+$bg:#2d3a4b;
+.container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: $bg;
+  min-height: 100%;
+  overflow: hidden;
+  .title{
+    color: white;
+    font-size: 36px;
+    margin-top: 100px;
+    margin-bottom: 40px;
+  }
+  .form-container{
+    width: 50%;
+    .el-input{
+      input{
+        background: transparent;
+      }
+    }
+    .btn-between{
+      display: flex;
+      justify-content: space-between;
+      .btn{
+        font-size: 18px;
+      }
+    }
+    .label-item{
+      color: white;
+      font-size: 22px;
+      white-space: nowrap;
+    }
+  }
+}
+.verify-area{
+  display: flex;
+  .verify-input{
+    margin-right: 20px;
+  }
+  .verify-btn{
+    font-size: 16px;
+  }
+}

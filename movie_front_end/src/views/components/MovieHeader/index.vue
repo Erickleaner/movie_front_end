@@ -14,10 +14,28 @@
             </div>
           </el-col>
           <el-col :span="8">
-            <div @click="loginOrRegister" class="login-register">
-              <el-icon name="user-solid"></el-icon>
-              <a @click.prevent="">登录 / 注册</a>
-            </div>
+            <template v-if="role===''">
+              <div class="info-area">
+                <el-icon name="user-solid"></el-icon>
+                <a @click.prevent="handleLogin">登录 / 注册</a>
+              </div>
+            </template>
+            <template v-else>
+              <el-popover
+                placement="top"
+                width="160"
+                v-model="visible">
+                <p style="text-align: center">是否退出登录?</p>
+                <div style="text-align: center; margin: 0">
+                  <el-button size="mini" type="text" @click="visible = false">取消</el-button>
+                  <el-button type="primary" size="mini" @click="handleLoginOut">确定</el-button>
+                </div>
+                <div class="info-area" slot="reference">
+                  <el-icon name="user-solid"></el-icon>
+                  <a @click.prevent="">{{ name }}</a>
+                </div>
+              </el-popover>
+            </template>
           </el-col>
 
         </el-row>
@@ -47,6 +65,10 @@
 
 <script>
 
+import {mapActions, mapState} from "vuex";
+import {Message} from "element-ui";
+import {clearRouter} from "@/router";
+
 export default {
   name: 'MovieHeader',
   components: { },
@@ -55,11 +77,26 @@ export default {
       input: '',
       activeIndex: '1',
       activeIndex2: '1',
+      visible:false
     }
   },
+  computed:{
+    ...mapState('user',{role:'role',name:'name'}),
+  },
   methods:{
-    loginOrRegister(){
+    ...mapActions('user',{resetToken:'resetToken'}),
+    ...mapActions('permission',{clearRoutes:'clearRoutes'}),
+    handleLogin(){
       this.$router.push({path:'/login'})
+    },
+    handleLoginOut(){
+      let _this = this
+      this.resetToken().then(()=>{
+        _this.clearRoutes()
+        clearRouter()
+        Message.success('退出登录成功！')
+        _this.visible = false
+      })
     }
   }
 }
@@ -70,27 +107,25 @@ export default {
 </style>
 
 <style lang="scss" scoped>
-@import '@/assets/global/style.scss';
 .title{
   padding: 5px;
-  font-size: $title-size;
+  font-size: 36px;
 }
-//nav set background-color
 .nav-bg{
   background-color: #545c64;
 }
-.login-register{
+.info-area{
   display: flex;
   flex-direction: column;
   align-items: center;
   a{
+    margin-top: 2px;
     font-size: 14px;
   }
   i{
     font-size: 24px;
   }
 }
-//此处的size不符合一般size
 
 
 </style>

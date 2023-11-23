@@ -1,0 +1,7 @@
+.tag-mt{
+  display: inline-block;
+  margin-left: 10px;
+  &:first-child{
+    margin-left: 0;
+  }
+}

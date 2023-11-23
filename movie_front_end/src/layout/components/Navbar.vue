@@ -8,7 +8,7 @@
       <template v-if="device!=='mobile'">
         <search id="header-search" class="right-menu-item" />
 
-        <error-log class="errLog-container right-menu-item hover-effect" />
+<!--        <error-log class="errLog-container right-menu-item hover-effect" />-->
 
         <screenfull id="screenfull" class="right-menu-item hover-effect" />
 
@@ -24,19 +24,10 @@
           <i class="el-icon-caret-bottom" />
         </div>
         <el-dropdown-menu slot="dropdown">
-          <router-link to="/profile/index">
-            <el-dropdown-item>Profile</el-dropdown-item>
-          </router-link>
           <router-link to="/">
             <el-dropdown-item>Dashboard</el-dropdown-item>
           </router-link>
-<!--          <a target="_blank" href="https://github.com/PanJiaChen/vue-element-admin/">
-            <el-dropdown-item>Github</el-dropdown-item>
-          </a>-->
-<!--          <a target="_blank" href="https://panjiachen.github.io/vue-element-admin-site/#/">
-            <el-dropdown-item>Docs</el-dropdown-item>
-          </a>-->
-          <el-dropdown-item divided @click.native="logout">
+          <el-dropdown-item divided @click.native="handleLoginOut">
             <span style="display:block;">Log Out</span>
           </el-dropdown-item>
         </el-dropdown-menu>
@@ -46,19 +37,20 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import {mapActions, mapGetters} from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
-import ErrorLog from '@/components/ErrorLog'
+/*import ErrorLog from '@/components/ErrorLog'*/
 import Screenfull from '@/components/Screenfull'
 import SizeSelect from '@/components/SizeSelect'
 import Search from '@/components/HeaderSearch'
+import {clearRouter} from "@/router";
+import {Message} from "element-ui";
 
 export default {
   components: {
     Breadcrumb,
     Hamburger,
-    ErrorLog,
     Screenfull,
     SizeSelect,
     Search
@@ -71,13 +63,20 @@ export default {
     ])
   },
   methods: {
+    ...mapActions('user',{resetToken:'resetToken'}),
+    ...mapActions('permission',{clearRoutes:'clearRoutes'}),
     toggleSideBar() {
       this.$store.dispatch('app/toggleSideBar')
     },
-    async logout() {
-      await this.$store.dispatch('user/logout')
-      this.$router.push('/')
-      //this.$router.push(`/login?redirect=${this.$route.fullPath}`)
+    handleLoginOut(){
+      let _this = this
+      this.resetToken().then(()=>{
+        _this.clearRoutes()
+        clearRouter()
+        Message.success('退出登录成功！')
+      }).then(()=>{
+        this.$router.push({path:'/', replace: true})
+      })
     }
   }
 }

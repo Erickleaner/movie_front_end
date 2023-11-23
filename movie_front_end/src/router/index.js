@@ -1,90 +1,70 @@
-import Vue from 'vue'
-import Router from 'vue-router'
+import VueRouter from "vue-router";
+import {dashboardRouter} from "@/router/modules/admin";
+import {tableRouter} from "@/router/modules/table";
 
-Vue.use(Router)
-
-/* Layout */
-import Layout from '@/layout'
-import { dashboardRouter } from '@/router/modules/admin'
-import { tableRouter } from '@/router/modules/table'
-
-/* Router Modules */
 
 export const adminRoutes = [
   dashboardRouter,
   tableRouter
-  // 404 page must be placed at the end !!!
-/*   { path: '*', redirect: '/404', hidden: true } */
 ]
 
-export const userRoutes = [
-  // 404 page must be placed at the end !!!
-  /*   { path: '*', redirect: '/404', hidden: true } */
-]
 
-export const commonRoute = [
+export let commonRoutes = [
   {
     path: '/',
     redirect:'/home'
-  }
+  },
 ]
 
-export const constantRoutes = [
+export let constantRoutes = [
   {
-    path: '/home',
-    component: () => import('@/views/home/index'),
-    name: 'home'
+    path:'/home',
+    name: 'home',
+    component: () => import('@/views/home/index')
   },
   {
     path: '/detail',
+    name: 'detail',
     component: () => import('@/views/detail/index'),
-    name: 'detail'
-  },
-  {
-    path: '/redirect',
-    component: Layout,
-    hidden: true,
-    children: [
-      {
-        path: '/redirect/:path(.*)',
-        component: () => import('@/views/redirect/index')
-      }
-    ]
   },
   {
     path: '/login',
-    component: () => import('@/views/login/index'),
-    hidden: true
+    name: 'login',
+    component: () => import('@/views/login/index')
   },
-  //管理员
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/register/index')
+  },
+  {
+    path: '*',
+    name: '404',
+    component: () => import('@/views/404/index')
+  }
 ]
 
-//router for common (neither user nor admin)
-const createRouter = () => new Router({
-  // mode: 'history', // require service support
-  scrollBehavior: () => ({ y: 0 }),
-  routes: constantRoutes.concat(commonRoute)
-})
-
-//router for admin (use reset not add)
-const createAdminRouter = () => new Router({
-  // mode: 'history', // require service support
-  scrollBehavior: () => ({ y: 0 }),
-  routes: constantRoutes.concat(adminRoutes)
-})
-
-const router = createRouter()
-
-// Detail see: https://github.com/vuejs/vue-router/issues/1234#issuecomment-357941465
-export function resetRouter() {
-  const newRouter = createRouter()
-  router.matcher = newRouter.matcher // reset router
+const createRouter = (addRoutes) => {
+  return new VueRouter({
+    routes: constantRoutes.concat(addRoutes),
+  })
 }
 
-export function resetAdminRouter(){
-  const newRouter = createAdminRouter()
-  router.matcher = newRouter.matcher // reset router
+//该系统中仅管理员需要动态变化权限
+export function resetRouter(role) {
+  if (role === 'admin'){
+    const newRouter = createRouter(adminRoutes)
+    router.matcher = newRouter.matcher
+  }
 }
+
+//重置
+export function clearRouter() {
+  const newRouter = createRouter(commonRoutes)
+  router.matcher = newRouter.matcher
+}
+
+const router = createRouter(commonRoutes)
 
 
 export default router

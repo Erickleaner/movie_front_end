@@ -1,4 +1,3 @@
-<!--这里出错了..-->
 <template>
   <div :class="classObj" class="app-wrapper">
     <div v-if="device==='mobile'&&sidebar.opened" class="drawer-bg" @click="handleClickOutside" />
@@ -9,7 +8,6 @@
         <tags-view v-if="needTagsView" />
       </div>
       <app-main />
-      <!--最右边的小按钮-->
       <right-panel v-if="showSettings">
         <settings />
       </right-panel>

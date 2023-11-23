@@ -5,18 +5,10 @@
       <el-col :span="18">
         <!--各种选项-->
         <div class="tag-row" v-for="group in groups">
-          <template v-if="group.isCheckBox">
-            <p>{{group.label}}：</p>
-            <el-checkbox-group @change="search" v-model="group.value" size="medium">
-              <el-checkbox-button v-for="option in group.options" :label="option" :key="option.id">{{option.name}}</el-checkbox-button>
-            </el-checkbox-group>
-          </template>
-          <template v-else>
-            <p>{{group.label}}：</p>
-            <el-radio-group @change="search" v-model="group.value">
-              <el-radio-button v-for="option in group.options" :label="option" :key="option.id">{{option.name}}</el-radio-button>
-            </el-radio-group>
-          </template>
+          <p>{{group.label}}：</p>
+          <el-radio-group @change="search" v-model="group.value">
+            <el-radio-button v-for="{id,name} in group.options" :label="id" :key="id">{{name}}</el-radio-button>
+          </el-radio-group>
         </div>
 
         <el-row :gutter="30" class="movie-row" :class="movieRowOrder(cur,pageSize)" v-for="cur in pageSize">
@@ -57,25 +49,6 @@ import Pagination from '@/components/Pagination'
 import MovieHeader from '@/views/components/MovieHeader'
 
 //use obj not str
-const yearsOptions = [{id:0,name:'全部'},{id:1,name:'2023'},{id:2,name:'2022'},
-  {id:3,name:'2021'},{id:4,name:'2020'},{id:5,name:'2019'},{id:6,name:'2018以前'}]
-//use obj not str
-const sortOptions = [{id:0,name:'综合排序'},{id:1,name:'近期热度'},
-  {id:2,name:'首映时间'},{id:3,name:'高分优先'}]
-const checkGroupsTemp = [
-  {
-    label:'年代',
-    value: yearsOptions[0],
-    options: yearsOptions,
-    isCheckBox:false
-  },
-  {
-    label:'排序',
-    value: sortOptions[0],
-    options: sortOptions,
-    isCheckBox:false
-  },
-]
 export default {
   name: 'Home',
   components: { MovieHeader, Pagination },
@@ -106,7 +79,7 @@ export default {
   created() {
     const _this = this
     fetchCheckGroups().then(res=>{
-      let checkGroups = checkGroupsTemp
+      let checkGroups = this.checkGroupsTemp()
       const {data} = res
       let {countries,types} = data
       countries = countries.slice(0,11)
@@ -114,17 +87,15 @@ export default {
       checkGroups.splice(0, 0,
         {
           label:'类型',
-          value: types[0],
-          options: types,
-          isCheckBox:false
+          value: 0,
+          options: types
         }
       );
       checkGroups.splice(1, 0,
         {
           label:'地区',
-          value: countries[0],
-          options: countries,
-          isCheckBox:false
+          value: 0,
+          options: countries
         }
       );
       _this.groups = checkGroups
@@ -133,11 +104,29 @@ export default {
     })
   },
   methods:{
+    checkGroupsTemp(){
+      let yearsOptions = [{id:0,name:'全部'},{id:1,name:'2023'},{id:2,name:'2022'},
+        {id:3,name:'2021'},{id:4,name:'2020'},{id:5,name:'2019'},{id:6,name:'2018以前'}]
+      let sortOptions = [{id:0,name:'综合排序'},{id:1,name:'近期热度'},
+        {id:2,name:'首映时间'},{id:3,name:'高分优先'}]
+      return [
+        {
+          label:'年代',
+          value: 0,
+          options: yearsOptions
+        },
+        {
+          label:'排序',
+          value: 0,
+          options: sortOptions
+        },
+      ]
+    },
     search(){
-      const typeId = this.groups[0].value.id
-      const countryId = this.groups[1].value.id
-      const yearId = this.groups[2].value.id
-      const sortId = this.groups[3].value.id
+      const typeId = this.groups[0].value
+      const countryId = this.groups[1].value
+      const yearId = this.groups[2].value
+      const sortId = this.groups[3].value
       this.listQuery.typeId = typeId
       this.listQuery.countryId = countryId
       this.listQuery.yearId = yearId
